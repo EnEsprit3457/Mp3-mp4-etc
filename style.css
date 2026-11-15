@@ -115,6 +115,17 @@ h2 {
 .format-btn small { display: block; font-weight: 400; font-size: 0.7rem; color: var(--muted); }
 .format-btn.selected { border-color: var(--accent); background: var(--accent-soft); }
 
+/* Avertissements */
+.notice {
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+.notice p { margin: 8px 0; }
+.tip { font-size: 0.9rem; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; margin: 10px 0 12px; }
+
 /* Options GIF */
 .gif-options { border-top: 1px solid var(--border); padding-top: 12px; display: grid; gap: 12px; }
 .gif-options label { display: grid; gap: 6px; font-size: 0.95rem; }

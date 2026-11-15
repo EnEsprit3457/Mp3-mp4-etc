@@ -16,23 +16,30 @@ const EVEN_SIZE = 'scale=trunc(iw/2)*2:trunc(ih/2)*2'; // H.264 exige une taille
 const FORMATS = {
   // Vidéo
   mp4:  { group: 'video', label: 'MP4',  hint: 'le plus courant', mime: 'video/mp4',
+          speed: 'slow', note: "✅ Se lit partout : iPhone, Android, ordinateur, TV.",
           args: () => ['-vf', EVEN_SIZE, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart'] },
   mov:  { group: 'video', label: 'MOV',  hint: 'iPhone / Mac', mime: 'video/quicktime',
+          speed: 'slow', note: "💻 Format Apple : parfait sur iPhone et Mac. Sur Windows ou Android, certains lecteurs ne le lisent pas — préfère MP4.",
           args: () => ['-vf', EVEN_SIZE, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k'] },
   webm: { group: 'video', label: 'WEBM', hint: 'pour le web', mime: 'video/webm',
+          speed: 'veryslow', note: "💻 Plutôt pour ordinateur : l'iPhone ne peut pas l'enregistrer dans Photos et certains téléphones ne le lisent pas. Pour un téléphone, préfère MP4.",
           args: () => ['-c:v', 'libvpx', '-deadline', 'realtime', '-cpu-used', '8', '-b:v', '1M',
                        '-c:a', 'libopus', '-b:a', '128k'] },
   // Audio
   mp3:  { group: 'audio', label: 'MP3',  hint: 'marche partout', mime: 'audio/mpeg',
+          speed: null, note: "✅ Se lit partout : téléphone, ordinateur, voiture, enceinte…",
           args: () => ['-vn', '-c:a', 'libmp3lame', '-b:a', '192k'] },
   wav:  { group: 'audio', label: 'WAV',  hint: 'qualité max', mime: 'audio/wav',
+          speed: null, note: "⚠️ Fichiers très lourds (environ 10 Mo par minute) et pas de meilleure qualité si le son d'origine était compressé. Utile sur ordinateur pour du montage ; pour écouter sur téléphone, préfère MP3.",
           args: () => ['-vn', '-c:a', 'pcm_s16le'] },
   m4a:  { group: 'audio', label: 'M4A',  hint: 'Apple', mime: 'audio/mp4',
+          speed: null, note: "✅ Parfait sur iPhone et Mac, marche aussi sur Android et ordinateur.",
           args: () => ['-vn', '-c:a', 'aac', '-b:a', '192k'] },
   // Animation
   gif:  { group: 'gif',   label: 'GIF',  hint: 'animation', mime: 'image/gif',
+          speed: 'slow', note: "⚠️ Pas de son, couleurs limitées et fichier vite lourd. Idéal pour partager un court moment dans une conversation.",
           args: ({ start, duration, width }) => [
             '-ss', String(start), '-t', String(duration),
             '-vf', `fps=12,scale=${width}:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse`,
@@ -41,6 +48,8 @@ const FORMATS = {
 
 const VIDEO_EXT = ['mp4', 'mov', 'webm', 'gif', 'mkv', 'avi', 'm4v', '3gp'];
 const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'opus'];
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const BIG_FILE = 300 * 1024 * 1024; // au-delà, un téléphone peut manquer de mémoire
 
 // ---------------------------------------------------------------------------
@@ -53,6 +62,7 @@ const el = {
   videoGroup: $('videoGroup'), audioGroup: $('audioGroup'), gifGroup: $('gifGroup'),
   videoFormats: $('videoFormats'), audioFormats: $('audioFormats'), gifFormats: $('gifFormats'),
   gifOptions: $('gifOptions'), gifStart: $('gifStart'), gifDuration: $('gifDuration'), gifWidth: $('gifWidth'),
+  notice: $('notice'), iosTip: $('iosTip'),
   startLabel: $('startLabel'), durLabel: $('durLabel'),
   convertBtn: $('convertBtn'), cancelBtn: $('cancelBtn'), progressWrap: $('progressWrap'),
   progressBar: $('progressBar'), statusText: $('statusText'), errorText: $('errorText'),
@@ -72,6 +82,7 @@ const state = {
 let ffmpeg = null;
 let coreURLs = null;     // gardés en mémoire pour ne pas re-télécharger le moteur
 let totalSeconds = 0;    // durée à traiter, pour la barre de progression
+let wakeLock = null;     // empêche l'écran de s'éteindre pendant la conversion
 let logLines = [];      // messages de FFmpeg pendant la conversion en cours
 
 // ---------------------------------------------------------------------------
@@ -215,6 +226,7 @@ function renderFormats() {
   el.audioGroup.hidden = !el.audioFormats.children.length;
   el.gifGroup.hidden = !el.gifFormats.children.length;
   el.gifOptions.hidden = true;
+  el.notice.hidden = true;
 }
 
 function selectFormat(key) {
@@ -224,9 +236,35 @@ function selectFormat(key) {
     b.classList.toggle('selected', b.dataset.format === key);
   });
   el.gifOptions.hidden = key !== 'gif';
+  renderNotice(key);
   el.convertBtn.disabled = false;
   el.convertBtn.textContent = `Convertir en ${FORMATS[key].label}`;
   hideError();
+}
+
+// Avertissements : temps de conversion et appareil conseillé
+const SLOW_TEXT = {
+  slow: "⏳ Conversion vidéo : ça peut prendre plusieurs minutes. Reste sur cette page et garde l'écran allumé.",
+  veryslow: "⏳ WEBM est le format le plus lent à créer : sur téléphone, compte plusieurs minutes, même pour une vidéo courte. Reste sur cette page.",
+};
+
+function renderNotice(key) {
+  const f = FORMATS[key];
+  const lines = [];
+  if (f.speed) lines.push(SLOW_TEXT[f.speed]);
+  if (f.speed && key !== 'gif' && state.mediaDuration > 120) {
+    lines.push(`🎞️ Ta vidéo dure ${formatTime(state.mediaDuration)} : plus elle est longue, plus c'est long à convertir.`);
+  }
+  if (state.file && state.file.size > BIG_FILE) {
+    lines.push("📦 Fichier très lourd : sur téléphone, la conversion peut échouer par manque de mémoire. Un ordinateur est plus adapté.");
+  }
+  lines.push(f.note);
+  el.notice.replaceChildren(...lines.map((t) => {
+    const p = document.createElement('p');
+    p.textContent = t;
+    return p;
+  }));
+  el.notice.hidden = false;
 }
 
 function updateGifLabels() {
@@ -320,6 +358,7 @@ async function convert() {
   const outputName = `output.${target}`;
 
   try {
+    try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {}
     await loadEngine();
 
     setProgress(0, 'Préparation du fichier…');
@@ -383,6 +422,8 @@ function explainFailure(target) {
 
 function finishBusy() {
   state.busy = false;
+  wakeLock?.release().catch(() => {});
+  wakeLock = null;
   el.progressWrap.hidden = true;
   el.convertBtn.disabled = !state.target;
   document.querySelectorAll('.format-btn, #fileInput').forEach((b) => { b.disabled = false; });
@@ -421,6 +462,12 @@ function showResult(blob, target) {
   el.resultInfo.textContent = `${name} · ${formatSize(blob.size)}`;
   el.downloadBtn.href = url;
   el.downloadBtn.download = name;
+  el.iosTip.hidden = !IS_IOS;
+  if (IS_IOS) {
+    el.iosTip.textContent = group === 'video'
+      ? "📱 Sur iPhone : après « Télécharger », le fichier va dans l'app Fichiers › Téléchargements. Pour le mettre dans Photos, ouvre-le puis Partager › Enregistrer la vidéo."
+      : "📱 Sur iPhone : après « Télécharger », le fichier va dans l'app Fichiers › Téléchargements.";
+  }
   el.resultCard.hidden = false;
   el.resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
