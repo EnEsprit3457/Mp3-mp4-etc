@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <title>Convertisseur Mp3 Mp4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>🎬 Convertisseur</h1>
+      <p class="subtitle">Audio, vidéo et GIF — directement dans ton navigateur.<br>
+        Tes fichiers ne quittent jamais ton appareil.</p>
+    </header>
+
+    <!-- Étape 1 : choisir le fichier -->
+    <section class="card">
+      <h2><span class="step">1</span> Choisis ton fichier</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm,.gif">
+        <span class="dz-icon">📁</span>
+        <span class="dz-text" id="dzText">Touche ici pour choisir un fichier</span>
+        <span class="dz-hint">MP3, WAV, M4A, MP4, MOV, WEBM, GIF</span>
+      </label>
+      <p class="file-info" id="fileInfo" hidden></p>
+    </section>
+
+    <!-- Étape 2 : choisir le format -->
+    <section class="card" id="formatCard" hidden>
+      <h2><span class="step">2</span> Choisis le format</h2>
+      <div class="group" id="videoGroup">
+        <p class="group-title">🎬 Vidéo</p>
+        <div class="formats" id="videoFormats"></div>
+      </div>
+      <div class="group" id="audioGroup">
+        <p class="group-title">🎵 Audio</p>
+        <div class="formats" id="audioFormats"></div>
+      </div>
+      <div class="group" id="gifGroup">
+        <p class="group-title">🖼️ Animation</p>
+        <div class="formats" id="gifFormats"></div>
+      </div>
+
+      <!-- Options GIF -->
+      <div class="gif-options" id="gifOptions" hidden>
+        <p class="group-title">Réglages du GIF</p>
+        <label>Commencer à <strong id="startLabel">0 s</strong>
+          <input type="range" id="gifStart" min="0" max="60" step="0.5" value="0">
+        </label>
+        <label>Durée <strong id="durLabel">5 s</strong>
+          <input type="range" id="gifDuration" min="1" max="15" step="0.5" value="5">
+        </label>
+        <label>Taille
+          <select id="gifWidth">
+            <option value="320">Petite (320 px) — rapide</option>
+            <option value="480" selected>Moyenne (480 px)</option>
+            <option value="640">Grande (640 px) — plus lourde</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Étape 3 : convertir -->
+    <section class="card" id="convertCard" hidden>
+      <h2><span class="step">3</span> Convertis</h2>
+      <button class="btn-primary" id="convertBtn" disabled>Convertir</button>
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="status" id="statusText"></p>
+        <button class="btn-secondary" id="cancelBtn">Annuler</button>
+      </div>
+      <p class="error" id="errorText" hidden></p>
+    </section>
+
+    <!-- Résultat -->
+    <section class="card result" id="resultCard" hidden>
+      <h2>✅ C'est prêt !</h2>
+      <div class="preview" id="preview"></div>
+      <p class="file-info" id="resultInfo"></p>
+      <a class="btn-primary" id="downloadBtn" download>⬇️ Télécharger</a>
+      <button class="btn-secondary" id="againBtn">Convertir un autre fichier</button>
+    </section>
+
+    <footer>
+      <p>Fonctionne grâce à <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>.
+        La première conversion télécharge le moteur (~30 Mo), ensuite c'est plus rapide.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
