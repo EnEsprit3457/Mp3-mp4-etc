@@ -2,10 +2,11 @@
 // grâce à ffmpeg.wasm (FFmpeg compilé pour le web).
 
 import { FFmpeg } from './lib/ffmpeg/index.js';
-import { fetchFile, toBlobURL } from './lib/util/index.js';
+import { fetchFile } from './lib/util/index.js';
 
 // Le "moteur" FFmpeg (~30 Mo) est téléchargé une seule fois depuis un CDN.
 const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+const WASM_SIZE = 32129114; // taille réelle du moteur, utile si le serveur ne l'indique pas
 
 // ---------------------------------------------------------------------------
 // Les formats proposés et la commande FFmpeg utilisée pour chacun
@@ -238,19 +239,39 @@ el.gifDuration.addEventListener('input', updateGifLabels);
 // ---------------------------------------------------------------------------
 // Étape 3 : conversion
 // ---------------------------------------------------------------------------
+// Télécharge un fichier en suivant la progression, et le garde en mémoire (adresse "blob:")
+async function downloadAsBlobURL(url, mime, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Impossible de télécharger le moteur de conversion. Vérifie ta connexion Internet.");
+  const chunks = [];
+  if (res.body && onProgress) {
+    // Le serveur peut compresser le fichier : sa taille annoncée n'est alors pas fiable
+    const announced = Number(res.headers.get('content-length')) || 0;
+    const reader = res.body.getReader();
+    let received = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      const total = Math.max(received, announced >= WASM_SIZE ? announced : WASM_SIZE);
+      onProgress(received, total);
+    }
+  } else {
+    chunks.push(await res.arrayBuffer());
+  }
+  return URL.createObjectURL(new Blob(chunks, { type: mime }));
+}
+
 async function loadEngine() {
   if (ffmpeg) return;
 
   if (!coreURLs) {
     setProgress(0, 'Téléchargement du moteur de conversion… (une seule fois)');
-    const coreURL = await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript');
-    const wasmURL = await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm', true,
-      ({ received, total }) => {
-        if (total > 0) {
-          setProgress(received / total,
-            `Téléchargement du moteur… ${formatSize(received)} / ${formatSize(total)}`);
-        }
-      });
+    const coreURL = await downloadAsBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript');
+    const wasmURL = await downloadAsBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm',
+      (received, total) => setProgress(received / total,
+        `Téléchargement du moteur… ${formatSize(received)} / ${formatSize(total)}`));
     coreURLs = { coreURL, wasmURL };
   }
 
