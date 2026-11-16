@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>Simpleconvertor Clipper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <nav class="tabs">
+      <a href="index.html">🔄 Convertir</a>
+      <a href="clipper.html" class="active">✂️ Clipper</a>
+    </nav>
+
+    <header>
+      <h1>✂️ Clipper</h1>
+      <p class="subtitle">Trouve automatiquement les meilleurs moments d'une vidéo<br>
+        et transforme-les en clips verticaux pour TikTok, Reels et Shorts.</p>
+    </header>
+
+    <!-- Étape 1 : la vidéo -->
+    <section class="card">
+      <h2><span class="step">1</span> Choisis ta vidéo</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="video/*,.mp4,.mov,.webm,.mkv">
+        <span class="dz-icon">🎥</span>
+        <span class="dz-text" id="dzText">Touche ici pour choisir une vidéo</span>
+        <span class="dz-hint">Stream, podcast, vlog… (MP4, MOV, WEBM)</span>
+      </label>
+      <p class="file-info" id="fileInfo" hidden></p>
+    </section>
+
+    <!-- Étape 2 : réglages -->
+    <section class="card" id="settingsCard" hidden>
+      <h2><span class="step">2</span> Réglages</h2>
+
+      <p class="group-title">Nombre de clips</p>
+      <div class="choices" data-name="count">
+        <button type="button" data-value="3">3</button>
+        <button type="button" data-value="5" class="selected">5</button>
+        <button type="button" data-value="10">10</button>
+        <button type="button" data-value="15">15</button>
+      </div>
+
+      <p class="group-title">Durée de chaque clip</p>
+      <div class="choices" data-name="length">
+        <button type="button" data-value="15">15 s</button>
+        <button type="button" data-value="30" class="selected">30 s</button>
+        <button type="button" data-value="45">45 s</button>
+        <button type="button" data-value="60">60 s</button>
+      </div>
+
+      <p class="group-title">Cadrage vertical</p>
+      <div class="choices two" data-name="layout">
+        <button type="button" data-value="crop" class="selected">Plein écran<small>coupe les côtés</small></button>
+        <button type="button" data-value="blur">Image entière<small>avec fond flou</small></button>
+      </div>
+
+      <div class="notice" id="notice"></div>
+    </section>
+
+    <!-- Étape 3 : lancement -->
+    <section class="card" id="runCard" hidden>
+      <h2><span class="step">3</span> Crée les clips</h2>
+      <button class="btn-primary" id="runBtn">✨ Trouver les meilleurs moments</button>
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="status" id="statusText"></p>
+        <button class="btn-secondary" id="cancelBtn">Arrêter</button>
+      </div>
+      <p class="error" id="errorText" hidden></p>
+    </section>
+
+    <!-- Étape 4 : tri -->
+    <section class="card" id="galleryCard" hidden>
+      <h2><span class="step">4</span> Trie tes clips</h2>
+      <p class="file-info" id="galleryInfo"></p>
+      <p class="tip" id="shareTip">Garde les meilleurs, supprime les autres, puis touche
+        <strong>Partager</strong> pour l'envoyer directement sur TikTok, Instagram…</p>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <footer>
+      <p>⚠️ Ne publie que des vidéos qui t'appartiennent ou dont le créateur t'a donné l'accord.</p>
+      <p>Tout se passe sur ton appareil : tes vidéos ne sont envoyées nulle part.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="clipper.js"></script>
+</body>
+</html>

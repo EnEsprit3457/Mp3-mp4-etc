@@ -46,7 +46,7 @@ body {
   padding: 20px 16px 40px;
 }
 
-header { text-align: center; margin-bottom: 18px; }
+header { text-align: center; margin: 14px 0 18px; }
 h1 { font-size: 1.8rem; margin: 8px 0 4px; }
 .subtitle { color: var(--muted); margin: 0; font-size: 0.95rem; }
 
@@ -177,3 +177,77 @@ footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top:
 footer a { color: var(--accent); }
 
 [hidden] { display: none !important; }
+
+/* Onglets entre les pages */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 5px;
+}
+.tabs a {
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.tabs a.active { background: var(--accent); color: var(--accent-text); }
+
+/* Choix des réglages (Clipper) */
+.choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.choices.two { grid-template-columns: 1fr 1fr; }
+.choices button {
+  min-height: 48px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.choices button small { display: block; font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+.choices button.selected { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Galerie de clips */
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.clip {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.clip video { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 8px; background: #000; }
+.clip-info { margin: 0; font-size: 0.78rem; color: var(--muted); }
+.clip-info strong { display: block; color: var(--text); font-size: 0.9rem; }
+.clip-info span { display: block; }
+.clip-actions { display: grid; grid-template-columns: 1fr 44px; gap: 6px; }
+.clip-actions.with-share { grid-template-columns: 1fr 1fr; }
+.clip-actions button.primary { grid-column: 1 / -1; }
+.clip, .clip-actions > * { min-width: 0; }
+.btn-small {
+  flex: 1 1 auto;
+  min-height: 40px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-small.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.btn-small.danger { padding: 8px 0; }
